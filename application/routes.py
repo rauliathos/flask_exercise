@@ -1,62 +1,45 @@
 from application import app, db
 from application.models import ToDos
-
-
-
-@app.route('/home')
-def home():
-    return 'This is the home page'
-
-
+from flask import redirect, url_for
 
 
 @app.route('/')
 def index():
-    todo = ToDos.query.first()
-    return f'Task: {todo.task} Completed: {todo.completed} '
+    todo = ToDos.query.all()
+    empstr = ""    
+    for t in todo:
+        empstr += f'{t.id} {t.task}  {t.completed} <br>'    
+    return empstr
 
-@app.route('/add/<taskName>')
-def add(taskName):
-    new_task = ToDos(task="Brand New Task")
-    new_task.task = taskName
-    db.session.add(new_task)
+@app.route('/add/<t>')
+def add(t):
+    newtask = ToDos(task=t)
+    db.session.add(newtask)
     db.session.commit()
-    return "Added a new todo"    
+    return redirect(url_for('index'))
 
-@app.route('/read')
-def read():
-    all_tasks = ToDos.query.all()
-    tasks_string = ""
-    for tsk in all_tasks:
-        tasks_string += "<br>"+ tsk.task+ "     Completed? " + str(tsk.completed)
-    return tasks_string
-
-@app.route('/complete')
-def complete():
-    first_task = ToDos.query.first()
-    first_task.completed= True
+@app.route('/complete/<int:id>')
+def complete(id):
+    todo = ToDos.query.get(id)
+    todo.completed = True   
     db.session.commit()
-    return str(first_task.completed)
+    return redirect(url_for('index'))
 
-@app.route('/incomplete')
-def incomplete():
-    first_task = ToDos.query.first()
-    first_task.completed= False
+@app.route('/incomplete/<int:id>')
+def incomplete(id):
+    todo = ToDos.query.get(id)
+    todo.completed = False    
     db.session.commit()
-    return str(first_task.completed)
-
-
-@app.route('/delete')
-def delete():
-    del_task = ToDos.query.first()
-    db.session.delete(del_task)
+    return redirect(url_for('index'))
+@app.route('/update/<int:id>/<newtask>')
+def update(id, newtask):
+    todo = ToDos.query.get(id)
+    todo.task = newtask    
     db.session.commit()
-    return "Task DELETED"
-
-@app.route('/update/<task_name>')
-def update(task_name):
-    first_task = ToDos.query.first()
-    rem =ToDos.query.first()
-    first_task.task = task_name
+    return redirect(url_for('index'))
+@app.route('/delete/<deltask>')
+def delete(deltask):
+    todo = ToDos.query.filter_by(task=deltask).first()
+    db.session.delete(todo)
     db.session.commit()
-    return f"{rem.task} was changed to {first_task.task}"
+    return redirect(url_for('index'))
